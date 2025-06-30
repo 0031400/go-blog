@@ -1,0 +1,18 @@
+使用反向代理 /api
+/post/uuid
+{title,content,tags,date,category}
+/post/list/page
+[{title,brief,uuid,time}]
+/tags
+[{name,uuid}]
+/tag/uuid
+[{title,brief,uuid,time}]
+/categories
+/category/uuid
+
+/admin
+/post/new
+/post/delete
+/post/alter
+/tag/new
+/category/new
