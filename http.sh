@@ -8,3 +8,7 @@ curl http://127.0.0.1:8080/admin/post -X PUT \
   -d "tags=[\"53483b8f534a4ce2a566f3db9fd07ea2\",\"8148aa3523b44069a7057e3fa40dafba\"]"
 # /admin/post delete
 curl http://127.0.0.1:8080/admin/post/ -X PUT
+# /admin/post post
+curl http://127.0.0.1:8080/admin/post \
+  -d "title=newtitle" \
+  -d "uuid=88eb49f836fb4d9dba0156f7ec24cf8e"

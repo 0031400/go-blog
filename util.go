@@ -7,6 +7,9 @@ import (
 )
 
 func parseStrings(s string) ([]string, error) {
+	if s == "" {
+		return []string{}, nil
+	}
 	var result []string
 	err := json.Unmarshal([]byte(s), &result)
 	if err != nil {
@@ -27,4 +30,17 @@ func uuid() (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(u), nil
+}
+func stringInclude(s string, list []string) int {
+	for i, v := range list {
+		if v == s {
+			return i
+		}
+	}
+	return -1
+}
+func stringUpdateIfNotNull(oldS *string, newS string) {
+	if newS != "" {
+		*oldS = newS
+	}
 }

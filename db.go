@@ -137,38 +137,54 @@ func postUpdate(uuid string, title string, date string, brief string, content st
 			tx.Commit()
 		}
 	}()
-	var oldPost post
-	err = db.QueryRow("SELECT * FROM posts WHERE uuid =?", uuid).Scan(&oldPost)
+	var newTitle, newBrief, newDate, newContent, newCategoryUUID string
+	err = db.QueryRow("SELECT title,date,brief,content,categoryUUID FROM posts WHERE uuid =?", uuid).Scan(&newTitle, &newDate, &newBrief, &newContent, &newCategoryUUID)
 	if err == sql.ErrNoRows {
 		return errors.New("post no founded")
 	} else if err != nil {
 		return err
 	}
-	newPost := post{
-		uuid:         oldPost.uuid,
-		title:        oldPost.title,
-		date:         oldPost.date,
-		brief:        oldPost.brief,
-		content:      oldPost.content,
-		categoryUUID: oldPost.categoryUUID,
-	}
-	rows, err := db.Query("SELECT tagUUID FROM post_tags WHERE postUUID = ?", uuid)
+	stringUpdateIfNotNull(&newTitle, title)
+	stringUpdateIfNotNull(&newDate, date)
+	stringUpdateIfNotNull(&newBrief, brief)
+	stringUpdateIfNotNull(&newContent, content)
+	stringUpdateIfNotNull(&newCategoryUUID, categoryUUID)
+	// del with the tags
+	flagList := make([]bool, len(tagUUIDs))
+	rows, err := tx.Query("SELECT tagUUID FROM post_tags WHERE postUUID = ?", uuid)
 	if err != nil {
 		return err
 	}
 	defer rows.Close()
+	i := 0
 	for rows.Next() {
 		var tagUUID string
 		rows.Scan(&tagUUID)
-		exist := false
-		for _, i := range tagUUIDs {
-			if i == tagUUID {
-				exist = true
-				break
+		index := stringInclude(tagUUID, tagUUIDs)
+		if index != -1 {
+			// if exist
+			flagList[i] = true
+		} else {
+			// delete the flag
+			_, err = tx.Exec("DELETE FROM post_tags WHERE postUUID = ? AND tagUUID =?", uuid, tagUUID)
+			if err != nil {
+				return err
 			}
 		}
-		if !exist {
-			tx.Exec("DELETE FROM post_tags WHERE postUUID = ? AND tagUUID =?", uuid, tagUUID)
+		i++
+	}
+	for i, v := range tagUUIDs {
+		if flagList[i] {
+			continue
+		}
+		_, err := tx.Exec("INSERT INTO post_tags (postUUID,tagUUId) VALUES (?,?)", uuid, v)
+		if err != nil {
+			return err
 		}
 	}
+	_, err = tx.Exec("UPDATE posts SET title = ?, date = ?, brief = ?, content = ?, categoryUUID = ? WHERE uuid = ?", title, date, brief, content, categoryUUID, uuid)
+	if err != nil {
+		return err
+	}
+	return nil
 }
