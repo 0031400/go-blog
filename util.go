@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"log"
+	"time"
 )
 
 func parseStrings(s string) ([]string, error) {
@@ -45,4 +46,7 @@ func stringUpdateIfNotNull(oldS *string, newS string) {
 		log.Println("try to change: ", oldS, newS)
 		*oldS = newS
 	}
+}
+func nowDate() string {
+	return time.Now().Format("20060102")
 }

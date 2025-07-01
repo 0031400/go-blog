@@ -1,9 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 func handlerPostNew(w http.ResponseWriter, r *http.Request) {
@@ -33,7 +35,7 @@ func handlerPostNew(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "success new post")
 }
 func handlerPostDelete(w http.ResponseWriter, r *http.Request) {
-	uuid := r.URL.Path[len("/admin/post/"):]
+	uuid := r.URL.Query().Get("uuid")
 	if !verifyUUID(uuid) {
 		http.Error(w, "uuid not verified", 400)
 		return
@@ -85,6 +87,7 @@ func handlerTagNew(w http.ResponseWriter, r *http.Request) error {
 		http.Error(w, "fail to new tag", 500)
 		return err
 	}
+	fmt.Fprint(w, "success to new tag")
 	return nil
 }
 func handlerTagUpdate(w http.ResponseWriter, r *http.Request) error {
@@ -101,12 +104,14 @@ func handlerTagUpdate(w http.ResponseWriter, r *http.Request) error {
 	}
 	err := tagUpdate(uuid, newName)
 	if err != nil {
+		fmt.Fprint(w, "fail to update tag")
 		return err
 	}
+	fmt.Fprint(w, "success to update tag")
 	return nil
 }
 func handlerTagDelete(w http.ResponseWriter, r *http.Request) error {
-	uuid := r.URL.Path[len("/admin/tag"):]
+	uuid := r.URL.Query().Get("uuid")
 	forceString := r.URL.Query().Get("force")
 	var force bool
 	if forceString == "true" {
@@ -120,7 +125,93 @@ func handlerTagDelete(w http.ResponseWriter, r *http.Request) error {
 	}
 	err := tagDelete(uuid, force)
 	if err != nil {
+		http.Error(w, "fail to delete tag", 500)
 		return err
 	}
+	fmt.Fprint(w, "success to delete tag")
+	return nil
+}
+func handlerCategoryNew(w http.ResponseWriter, r *http.Request) error {
+	r.ParseForm()
+	name := r.Form.Get("name")
+	if name == "" {
+		http.Error(w, "lack name", 400)
+		return nil
+	}
+	err := categoryNew(name)
+	if err != nil {
+		http.Error(w, "fail to new category", 500)
+		return err
+	}
+	fmt.Fprint(w, "success to new category")
+	return nil
+}
+func handlerCategoryUpdate(w http.ResponseWriter, r *http.Request) error {
+	r.ParseForm()
+	newName := r.Form.Get("name")
+	uuid := r.Form.Get("uuid")
+	if !verifyUUID(uuid) {
+		http.Error(w, "uuid not verified", 400)
+		return nil
+	}
+	if newName == "" {
+		http.Error(w, "new name not found", 400)
+		return nil
+	}
+	err := categoryUpdate(uuid, newName)
+	if err != nil {
+		fmt.Fprint(w, "fail to update category")
+		return err
+	}
+	fmt.Fprint(w, "success to update category")
+	return nil
+}
+func handlerCategoryDelete(w http.ResponseWriter, r *http.Request) error {
+	uuid := r.URL.Query().Get("uuid")
+	forceString := r.URL.Query().Get("force")
+	var force bool
+	if forceString == "true" {
+		force = true
+	} else {
+		force = false
+	}
+	if !verifyUUID(uuid) {
+		http.Error(w, "uuid not verified", 400)
+		return nil
+	}
+	err := categoryDelete(uuid, force)
+	if err != nil {
+		http.Error(w, "fail to delete category", 500)
+		return err
+	}
+	fmt.Fprint(w, "success to delete category")
+	return nil
+}
+func handlerPostList(w http.ResponseWriter, r *http.Request) error {
+	index, err := strconv.Atoi(r.URL.Query().Get("index"))
+	if err != nil {
+		http.Error(w, "fail to parse index", 500)
+		return err
+	}
+	size, err := strconv.Atoi(r.URL.Query().Get("size"))
+	if err != nil {
+		http.Error(w, "fail to parse size", 500)
+		return err
+	}
+	if index <= 0 || size <= 0 {
+		http.Error(w, "query variable not allowed", 400)
+		return nil
+	}
+	postList, err := postList(index, size)
+	if err != nil {
+		http.Error(w, "fail to get post list", 500)
+		return err
+	}
+	jsonData, err := json.Marshal(postList)
+	if err != nil {
+		http.Error(w, "fail to marshal json", 500)
+		return err
+	}
+	fmt.Fprint(w, string(jsonData))
 	return nil
 }
