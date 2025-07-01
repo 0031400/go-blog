@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -47,26 +48,9 @@ func tagsExist(tagNames []string) (bool, error) {
 	return true, nil
 }
 func postNew(title string, date string, brief string, content string, tagUUIDs []string, categoryUUID string) error {
-	var newUUID string
-	var err error
-	newUUIDTime := 0
-	for {
-		var dummy int
-		newUUID, err = uuid()
-		if err != nil {
-			return err
-		}
-		query := "SELECT 1 FROM posts WHERE uuid = ? LIMIT 1"
-		err = db.QueryRow(query, newUUID).Scan(&dummy)
-		if err == sql.ErrNoRows {
-			break
-		} else if err != nil {
-			return err
-		}
-		newUUIDTime++
-		if newUUIDTime == 6 {
-			return errors.New("fail to generate new uuid")
-		}
+	newUUID, err := getNewUUID("posts")
+	if err != nil {
+		return err
 	}
 	tx, err := db.Begin()
 	if err != nil {
@@ -138,7 +122,7 @@ func postUpdate(uuid string, title string, date string, brief string, content st
 		}
 	}()
 	var newTitle, newBrief, newDate, newContent, newCategoryUUID string
-	err = db.QueryRow("SELECT title,date,brief,content,categoryUUID FROM posts WHERE uuid =?", uuid).Scan(&newTitle, &newDate, &newBrief, &newContent, &newCategoryUUID)
+	err = db.QueryRow("SELECT title,date,brief,content,categoryUUID FROM posts WHERE uuid = ?", uuid).Scan(&newTitle, &newDate, &newBrief, &newContent, &newCategoryUUID)
 	if err == sql.ErrNoRows {
 		return errors.New("post no founded")
 	} else if err != nil {
@@ -149,6 +133,9 @@ func postUpdate(uuid string, title string, date string, brief string, content st
 	stringUpdateIfNotNull(&newBrief, brief)
 	stringUpdateIfNotNull(&newContent, content)
 	stringUpdateIfNotNull(&newCategoryUUID, categoryUUID)
+	if tagUUIDs == nil {
+		return nil
+	}
 	// del with the tags
 	flagList := make([]bool, len(tagUUIDs))
 	rows, err := tx.Query("SELECT tagUUID FROM post_tags WHERE postUUID = ?", uuid)
@@ -182,9 +169,109 @@ func postUpdate(uuid string, title string, date string, brief string, content st
 			return err
 		}
 	}
-	_, err = tx.Exec("UPDATE posts SET title = ?, date = ?, brief = ?, content = ?, categoryUUID = ? WHERE uuid = ?", title, date, brief, content, categoryUUID, uuid)
+	_, err = tx.Exec("UPDATE posts SET title = ?, date = ?, brief = ?, content = ?, categoryUUID = ? WHERE uuid = ?", newTitle, newDate, newBrief, newContent, newCategoryUUID, uuid)
 	if err != nil {
 		return err
+	}
+	return nil
+}
+func tagNew(name string) error {
+	newUUID, err := getNewUUID("tags")
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec("INSERT INTO tags (name,uuid) VALUES (?,?)", name, newUUID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func getNewUUID(table string) (string, error) {
+	var newUUID string
+	var err error
+	newUUIDTime := 0
+	for {
+		var dummy int
+		newUUID, err = uuid()
+		if err != nil {
+			return "", err
+		}
+		query := fmt.Sprintf("SELECT 1 FROM %s WHERE uuid = ? LIMIT 1", table)
+		err = db.QueryRow(query, newUUID).Scan(&dummy)
+		if err == sql.ErrNoRows {
+			return newUUID, nil
+		} else if err != nil {
+			return "", err
+		}
+		newUUIDTime++
+		if newUUIDTime == 6 {
+			return "", errors.New("fail to generate new uuid")
+		}
+	}
+}
+func tagUpdate(uuid string, newName string) error {
+	err := uuidOnlyOne(uuid, "tags")
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := db.Exec("UPDATE tags SET name = ? WHERE uuid = ?", newName, uuid)
+	if err != nil {
+		return err
+	}
+	affectedNum, err := rowsAffected.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affectedNum != 1 {
+		return fmt.Errorf("rows affected num not right.num: %d", affectedNum)
+	}
+	return nil
+}
+func tagDelete(uuid string, force bool) error {
+	err := uuidOnlyOne(uuid, "tag")
+	if err != nil {
+		return err
+	}
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		} else {
+			tx.Commit()
+		}
+	}()
+	var num int
+	err = db.QueryRow("SELECT COUNT (*) FROM post_tags WHERE tagUUID = ?", uuid).Scan(&num)
+	if err != nil {
+		return err
+	}
+	if num != 0 {
+		if force == false {
+			return errors.New("exist posts attached with the tag")
+		} else {
+			_, err = tx.Exec("DELETE FROM post_tags WHERE tagUUID = ?", uuid)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	_, err = tx.Exec("DELETE FROM tags WHERE uuid = ?", uuid)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func uuidOnlyOne(uuid string, table string) error {
+	var num int
+	err := db.QueryRow(fmt.Sprintf("SELECT 1 FROM %s WHERE uuid = ?", table), uuid).Scan(&num)
+	if err != nil {
+		return err
+	}
+	if num != 1 {
+		return fmt.Errorf("tag num not right.num: %d", num)
 	}
 	return nil
 }

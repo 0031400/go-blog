@@ -4,11 +4,12 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"log"
 )
 
 func parseStrings(s string) ([]string, error) {
 	if s == "" {
-		return []string{}, nil
+		return nil, nil
 	}
 	var result []string
 	err := json.Unmarshal([]byte(s), &result)
@@ -41,6 +42,7 @@ func stringInclude(s string, list []string) int {
 }
 func stringUpdateIfNotNull(oldS *string, newS string) {
 	if newS != "" {
+		log.Println("try to change: ", oldS, newS)
 		*oldS = newS
 	}
 }
