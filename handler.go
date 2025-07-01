@@ -186,7 +186,72 @@ func handlerCategoryDelete(w http.ResponseWriter, r *http.Request) error {
 	}
 	fmt.Fprint(w, "success to delete category")
 	return nil
+
 }
+func handlerCategoryList(w http.ResponseWriter, r *http.Request) error {
+	uuid := r.URL.Query().Get("uuid")
+	if !verifyUUID(uuid) {
+		http.Error(w, "uuid not verified", 400)
+		return nil
+	}
+	index, err := strconv.Atoi(r.URL.Query().Get("index"))
+	if err != nil {
+		http.Error(w, "fail to parse index", 500)
+		return err
+	}
+	size, err := strconv.Atoi(r.URL.Query().Get("size"))
+	if err != nil {
+		http.Error(w, "fail to parse size", 500)
+		return err
+	}
+	if index <= 0 || size <= 0 {
+		http.Error(w, "query variable not allowed", 400)
+		return nil
+	}
+	postList, err := categoryList(uuid, index, size)
+	if err != nil {
+		http.Error(w, "fail to get post list", 500)
+		return err
+	}
+	err = jsonResponse(w, postList)
+	if err != nil {
+		http.Error(w, "fail to response json", 500)
+	}
+	return nil
+}
+
+func handlerTagList(w http.ResponseWriter, r *http.Request) error {
+	uuid := r.URL.Query().Get("uuid")
+	if !verifyUUID(uuid) {
+		http.Error(w, "uuid not verified", 400)
+		return nil
+	}
+	index, err := strconv.Atoi(r.URL.Query().Get("index"))
+	if err != nil {
+		http.Error(w, "fail to parse index", 500)
+		return err
+	}
+	size, err := strconv.Atoi(r.URL.Query().Get("size"))
+	if err != nil {
+		http.Error(w, "fail to parse size", 500)
+		return err
+	}
+	if index <= 0 || size <= 0 {
+		http.Error(w, "query variable not allowed", 400)
+		return nil
+	}
+	postList, err := tagList(uuid, index, size)
+	if err != nil {
+		http.Error(w, "fail to get post list", 500)
+		return err
+	}
+	err = jsonResponse(w, postList)
+	if err != nil {
+		http.Error(w, "fail to response json", 500)
+	}
+	return nil
+}
+
 func handlerPostList(w http.ResponseWriter, r *http.Request) error {
 	index, err := strconv.Atoi(r.URL.Query().Get("index"))
 	if err != nil {
@@ -207,11 +272,37 @@ func handlerPostList(w http.ResponseWriter, r *http.Request) error {
 		http.Error(w, "fail to get post list", 500)
 		return err
 	}
-	jsonData, err := json.Marshal(postList)
+	err = jsonResponse(w, postList)
 	if err != nil {
-		http.Error(w, "fail to marshal json", 500)
+		http.Error(w, "fail to response json", 500)
+	}
+	return nil
+}
+
+func handlerPostDetail(w http.ResponseWriter, r *http.Request) error {
+	uuid := r.URL.Query().Get("uuid")
+	if !verifyUUID(uuid) {
+		http.Error(w, "uuid not verified", 400)
+		return nil
+	}
+	thePostDetail, err := postDetail(uuid)
+	if err != nil {
+		http.Error(w, "fail to get post detail", 400)
 		return err
 	}
+	err = jsonResponse(w, thePostDetail)
+	if err != nil {
+		http.Error(w, "fail to response json", 500)
+		return err
+	}
+	return nil
+}
+func jsonResponse(w http.ResponseWriter, item any) error {
+	jsonData, err := json.Marshal(item)
+	if err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprint(w, string(jsonData))
 	return nil
 }

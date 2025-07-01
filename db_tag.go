@@ -33,7 +33,7 @@ func tagDelete(uuid string, force bool) error {
 		}
 	}()
 	var num int
-	err = db.QueryRow("SELECT COUNT (*) FROM post_tags WHERE tagUUID = ? AND deleteAt IS NOT NULL", uuid).Scan(&num)
+	err = db.QueryRow("SELECT COUNT (*) FROM post_tags WHERE tagUUID = ? AND deleteAt IS NULL", uuid).Scan(&num)
 	if err != nil {
 		return err
 	}

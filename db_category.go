@@ -26,7 +26,7 @@ func categoryDelete(uuid string, force bool) error {
 		}
 	}()
 	var num int
-	err = db.QueryRow("SELECT COUNT (*) FROM posts WHERE categoryUUID = ? AND deleteAt IS NOT NULL", uuid).Scan(&num)
+	err = db.QueryRow("SELECT COUNT (*) FROM posts WHERE categoryUUID = ? AND deleteAt IS NULL", uuid).Scan(&num)
 	if err != nil {
 		return err
 	}

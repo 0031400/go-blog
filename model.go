@@ -1,18 +1,19 @@
 package main
 
-type category struct {
-	name string
-	uuid string
+type Category struct {
+	Name string `json:"name"`
+	UUID string `json:"uuid"`
 }
-type tag struct {
-	name string
-	uuid string
+type Tag struct {
+	Name string `json:"name"`
+	UUID string `json:"uuid"`
 }
-type post struct {
-	uuid        string
-	title       string
-	date        string
-	brief       string
-	theCategory category
-	theTags     []tag
+type Post struct {
+	UUID        string   `json:"uuid"`
+	Title       string   `json:"name"`
+	Date        string   `json:"date"`
+	Brief       string   `json:"brief"`
+	Content     string   `json:"content"`
+	TheCategory Category `json:"category"`
+	TheTags     []Tag    `json:"tags"`
 }
