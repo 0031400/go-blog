@@ -1,24 +1,30 @@
 package main
 
 import (
+	"encoding/base64"
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 )
 
 func main() {
 	var err error
+	loalConfig()
 	initDB()
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if !authMiddler(w, r) {
+			return
+		}
 		path := r.URL.Path
 		method := r.Method
 		switch {
 		case path == "/admin/post" && method == http.MethodPut:
-			handlerPostNew(w, r)
-		case path == "/admin/post/" && method == http.MethodDelete:
-			handlerPostDelete(w, r)
+			err = handlerPostNew(w, r)
+		case path == "/admin/post" && method == http.MethodDelete:
+			err = handlerPostDelete(w, r)
 		case path == "/admin/post" && method == http.MethodPost:
-			handlerPostUpdate(w, r)
+			err = handlerPostUpdate(w, r)
 		case path == "/admin/tag" && method == http.MethodPut:
 			err = handlerTagNew(w, r)
 		case path == "/admin/tag" && method == http.MethodDelete:
@@ -46,9 +52,16 @@ func main() {
 			log.Println(err)
 		}
 	})
-	fmt.Print("The server is running on 127.0.0.1:8080\n")
-	err = http.ListenAndServe("127.0.0.1:8080", nil)
+	fmt.Printf("The server is running on %s\n", config.ListenAddr)
+	err = http.ListenAndServe(config.ListenAddr, nil)
 	if err != nil {
 		panic(err)
 	}
+}
+func authMiddler(w http.ResponseWriter, r *http.Request) bool {
+	if strings.HasPrefix(r.URL.Path, "/admin") && r.Header.Get("Authorization") != base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", config.AdminAccount, config.AdminPassword))) {
+		http.Error(w, "auth fail", 403)
+		return false
+	}
+	return true
 }

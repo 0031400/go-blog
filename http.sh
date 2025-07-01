@@ -23,3 +23,5 @@ curl http://127.0.0.1:8080/admin/tag \
   -d "name=newTag" \
   -d "uuid=8148aa3523b44069a7057e3fa40dafba"
 curl http://127.0.0.1:8080/admin/tag/8148aa3523b44069a7057e3fa40dafba -X DELETE
+curl http://127.0.0.1:8080/post/list?size=3 &
+index=1

@@ -3,12 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 )
 
-func handlerPostNew(w http.ResponseWriter, r *http.Request) {
+func handlerPostNew(w http.ResponseWriter, r *http.Request) error {
 	r.ParseForm()
 	title := r.Form.Get("title")
 	date := r.Form.Get("date")
@@ -18,42 +17,41 @@ func handlerPostNew(w http.ResponseWriter, r *http.Request) {
 	categoryUUID := r.Form.Get("category")
 	tagUUIDs, err := parseStrings(requestTagUUIDs)
 	if err != nil {
-		log.Println(err)
 		http.Error(w, "fail to parse tags", 500)
-		return
+		return err
 	}
 	if !verifyDate(date) {
 		http.Error(w, "date not verified", 400)
-		return
+		return nil
 	}
 	err = postNew(title, date, brief, content, tagUUIDs, categoryUUID)
 	if err != nil {
-		log.Println(err)
 		http.Error(w, "fail to new post", 500)
-		return
+		return err
 	}
 	fmt.Fprint(w, "success new post")
+	return nil
 }
-func handlerPostDelete(w http.ResponseWriter, r *http.Request) {
+func handlerPostDelete(w http.ResponseWriter, r *http.Request) error {
 	uuid := r.URL.Query().Get("uuid")
 	if !verifyUUID(uuid) {
 		http.Error(w, "uuid not verified", 400)
-		return
+		return nil
 	}
 	err := postDelete(uuid)
 	if err != nil {
-		log.Println(err)
 		http.Error(w, "fail to delete post", 500)
-		return
+		return err
 	}
 	fmt.Fprint(w, "success delete post")
+	return nil
 }
-func handlerPostUpdate(w http.ResponseWriter, r *http.Request) {
+func handlerPostUpdate(w http.ResponseWriter, r *http.Request) error {
 	r.ParseForm()
 	uuid := r.Form.Get("uuid")
 	if !verifyUUID(uuid) {
 		http.Error(w, "uuid not verified", 400)
-		return
+		return nil
 	}
 	title := r.Form.Get("title")
 	date := r.Form.Get("date")
@@ -63,17 +61,16 @@ func handlerPostUpdate(w http.ResponseWriter, r *http.Request) {
 	categoryUUID := r.Form.Get("category")
 	tagUUIDs, err := parseStrings(requestTagUUIDs)
 	if err != nil {
-		log.Println(err)
 		http.Error(w, "fail to parse tags", 500)
-		return
+		return err
 	}
 	err = postUpdate(uuid, title, date, brief, content, tagUUIDs, categoryUUID)
 	if err != nil {
-		log.Println(err)
 		http.Error(w, "fail to new post", 500)
-		return
+		return err
 	}
 	fmt.Fprint(w, "success update post")
+	return nil
 }
 func handlerTagNew(w http.ResponseWriter, r *http.Request) error {
 	r.ParseForm()
