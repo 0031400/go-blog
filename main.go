@@ -16,9 +16,12 @@ func main() {
 		if !authMiddler(w, r) {
 			return
 		}
+		corsMiddler(w, r)
 		path := r.URL.Path
 		method := r.Method
 		switch {
+		case method == http.MethodOptions:
+			w.WriteHeader(http.StatusNoContent)
 		case path == "/admin/post" && method == http.MethodPut:
 			err = handlerPostNew(w, r)
 		case path == "/admin/post" && method == http.MethodDelete:
@@ -64,4 +67,9 @@ func authMiddler(w http.ResponseWriter, r *http.Request) bool {
 		return false
 	}
 	return true
+}
+func corsMiddler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 }

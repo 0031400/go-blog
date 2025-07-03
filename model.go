@@ -10,7 +10,7 @@ type Tag struct {
 }
 type Post struct {
 	UUID        string   `json:"uuid"`
-	Title       string   `json:"name"`
+	Title       string   `json:"title"`
 	Date        string   `json:"date"`
 	Brief       string   `json:"brief"`
 	Content     string   `json:"content"`

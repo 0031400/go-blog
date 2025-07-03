@@ -165,13 +165,13 @@ func postListQuery(detail bool, query string, args ...any) ([]Post, error) {
 	return thePostList, nil
 }
 func postList(index int, size int) ([]Post, error) {
-	return postListQuery(false, "SELECT uuid,title,date,brief,categoryUUID FROM posts WHERE deleteAt IS NULL ORDER BY date DESC LIMIT ? OFFSET ?", size, (index-1)*size)
+	return postListQuery(false, "SELECT uuid,title,date,brief,content,categoryUUID FROM posts WHERE deleteAt IS NULL ORDER BY date DESC LIMIT ? OFFSET ?", size, (index-1)*size)
 }
 func categoryList(uuid string, index int, size int) ([]Post, error) {
-	return postListQuery(false, "SELECT uuid,title,date,brief,categoryUUID FROM posts WHERE categoryUUID = ? AND deleteAt IS NULL ORDER BY date DESC LIMIT ? OFFSET ?", uuid, size, (index-1)*size)
+	return postListQuery(false, "SELECT uuid,title,date,brief,content,categoryUUID FROM posts WHERE categoryUUID = ? AND deleteAt IS NULL ORDER BY date DESC LIMIT ? OFFSET ?", uuid, size, (index-1)*size)
 }
 func postDetail(uuid string) (Post, error) {
-	thePostList, err := postListQuery(true, "SELECT title,date,content,categoryUUID FROM posts WHERE uuid = ? AND deleteAt IS NULL", uuid)
+	thePostList, err := postListQuery(true, "SELECT uuid,title,date,brief,content,categoryUUID FROM posts WHERE uuid = ? AND deleteAt IS NULL", uuid)
 	if err != nil {
 		return Post{}, err
 	}
