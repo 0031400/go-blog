@@ -205,7 +205,7 @@ func categoryFromUUIDToName(uuid string) (string, error) {
 }
 
 func fromUUIDToPost(postUUID string) (Post, error) {
-	onePostList, err := postListQuery(false, "SELECT uuid,title,date,brief,categoryUUID FROM posts WHERE deleteAt IS NULL AND uuid = ?", postUUID)
+	onePostList, err := postListQuery(false, "SELECT uuid,title,date,brief,content,categoryUUID FROM posts WHERE deleteAt IS NULL AND uuid = ?", postUUID)
 	if err != nil {
 		return Post{}, err
 	}
